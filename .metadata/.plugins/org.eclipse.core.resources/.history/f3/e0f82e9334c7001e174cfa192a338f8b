@@ -1,0 +1,13 @@
+package com.imaginnovate.service;
+
+import com.imaginnovate.dto.EmployeeDTO;
+import com.imaginnovate.dto.TaxDetails;
+
+
+public interface IEmployeeService {
+
+	public String addEmployee(EmployeeDTO employee);
+	
+	public TaxDetails calculateEmployeeTax(Integer employeeId);
+	
+}

@@ -1,0 +1,95 @@
+package com.imaginnovate.service;
+
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.imaginnovate.dto.EmployeeDTO;
+import com.imaginnovate.entity.Employee;
+import com.imaginnovate.repository.IEmployeeRepository;
+import com.imaginnovate.response.TaxDetails;
+
+@Service
+public class IEmployeeServiceImpl implements IEmployeeService {
+
+	@Autowired
+	private IEmployeeRepository repo;
+
+	@Override
+	public String addEmployee(EmployeeDTO employeedto) {
+
+		Employee employee = new Employee();
+
+		BeanUtils.copyProperties(employeedto, employee);
+
+		Employee saveEmployee = repo.save(employee);
+
+		return String.format("Employed Saved With %d", saveEmployee.getEmployeeID());
+
+	}
+
+	@Override
+	public TaxDetails calculateEmployeeTax(Integer employeeId) {
+
+		TaxDetails details = new TaxDetails();
+
+		Employee employee = repo.findById(employeeId).get();
+
+		BeanUtils.copyProperties(employee, details);
+
+		Double yearlySalary = employee.getSalary() * 12;
+
+		details.setYearlySalary(yearlySalary);
+
+		LocalDate date = employee.getDoj();
+
+		long days = ChronoUnit.DAYS.between(date, LocalDate.of(LocalDate.now().getYear(), 4, 01));
+
+		if (days < 366) {
+
+			yearlySalary = (double) (days / 30) * employee.getSalary() + (employee.getSalary() / 30) * days % 30;
+
+			details.setYearlySalary(yearlySalary);
+
+		}
+
+		if (yearlySalary <= 250000) {
+
+			details.setTaxAmount(0.0);
+
+			details.setCessAmount(0.0);
+
+		} else if (yearlySalary > 250000 && yearlySalary <= 500000) {
+
+			details.setTaxAmount(yearlySalary * 0.05);
+			details.setCessAmount(0.0);
+
+		} else if (yearlySalary > 500000 && yearlySalary <= 1000000) {
+
+			details.setTaxAmount(250000 * 0.05 + 500000 * 0.05);
+
+			details.setCessAmount(0.0);
+
+		} else {
+
+			details.setTaxAmount(250000 * 0.05 + 500000 * 0.1 + 1000000 * 0.05);
+
+			details.setCessAmount(yearlySalary * 0.02);
+
+		}
+
+		return details;
+	}
+
+	@Override
+	public List<Employee> findAllEmployees() {
+
+		return repo.findAll();
+
+	}
+
+}
